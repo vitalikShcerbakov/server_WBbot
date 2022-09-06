@@ -1,84 +1,117 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-import time
-import schedule
+import requests
+from settings import WB_API, TG_TOKEN
 import telebot
-from telebot import types
+from telebot import types  # для указание типов
+from threading import Thread
+import schedule
+import time
 
-
-TOKEN = '1722383778:AAFr6EEVT9z16sIxOmRhvFDuHcX8mRXquSE'
+TOKEN = TG_TOKEN
 bot = telebot.TeleBot(TOKEN)
 
-lst_vendor_code = []
-vendor_code_error = []
-
-@bot.message_handler(commands=['start', 'help'])
-def send_welcome(message):
-    bot.send_message(message.chat.id, '''Привет) Это версия 000000.2 =))
-                            Для загрузки списка артикулов набери - "list"
-                            Для старта набери -  "run"
-                            Для просмотра списка артикулов набери - "show"
-                            ''')
+minutes = 10
+list_vendor_code = []
 
 
-@bot.message_handler(content_types='text')
-def message_reply(message):
-    global lst_vendor_code
+@bot.message_handler(commands=['start'])
+def start(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton("Просмотреть список артикулов")
+    btn2 = types.KeyboardButton("Запустить проверку")
+    btn3 = types.KeyboardButton("Задать интервал")
+    markup.add(btn1, btn2, btn3)
+    bot.send_message(message.chat.id, text="Привет, {0.first_name}! Я bot версии 0.5 =))".format(message.from_user),
+                     reply_markup=markup)
 
-    if message.text == "list":
-        bot.send_message(message.chat.id, "Загрузи сюда чтонибудь")
 
-    elif message.text == 'run':
-        if len(lst_vendor_code) == 0:
-            bot.send_message(message.chat.id, 'Список пуст, загрузите список атрибутов')  # Отправка сообщения
-        for vc in lst_vendor_code:
-            msg = get_name_stock(vc)
-            bot.send_message(message.chat.id, msg)  # Отправка сообщения
-
-        bot.send_message(message.chat.id, f'Проверка завершена, Ошибок - {len(vendor_code_error)}')
-        #bot.send_message(message.chat.id, 'Проверка завершена')
-
-    elif message.text == 'show':
-        if len(lst_vendor_code) == 0:
-            bot.send_message(message.chat.id, 'Список пуст, загрузите список атрибутов')  # Отправка сообщения
+@bot.message_handler(content_types=['text'])
+def func(message):
+    global list_vendor_code
+    global minutes
+    if (message.text == "Запустить проверку"):
+        if len(list_vendor_code) == 0:
+            bot.send_message(message.chat.id, 'Список пуст, загрузи его')
         else:
-            bot.send_message(message.chat.id, str(lst_vendor_code))
-
-    elif message.text == 'time':
-        pass
+            answer = get_stock_info()
+            bot.send_message(message.chat.id, str(answer))
 
 
+    elif message.text == "Просмотреть список артикулов":
+        bot.send_message(message.chat.id, str(list_vendor_code))
+
+    elif message.text == 'Задать интервал':
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        item1 = types.KeyboardButton("1 мин")
+        item2 = types.KeyboardButton("5 мин")
+        item3 = types.KeyboardButton("10 мин")
+        item4 = types.KeyboardButton("15 мин")
+        item5 = types.KeyboardButton("В главное меню")
+        markup.add(item1, item2, item3, item4, item5)
+        bot.send_message(message.chat.id, 'Выберите что вам надо', reply_markup=markup)
+    elif message.text == '1 мин':
+        minutes = 1
+    elif message.text == '5 мин':
+        minutes = 5
+    elif message.text == '10 мин':
+        minutes = 10
+    elif message.text == '15 мин':
+        minutes = 15
+    elif message.text == 'В главное меню':
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        btn1 = types.KeyboardButton("Просмотреть список артикулов")
+        btn2 = types.KeyboardButton("Запустить проверку")
+        btn3 = types.KeyboardButton("Задать интервал")
+        markup.add(btn1, btn2, btn3)
+        bot.send_message(message.chat.id, text="Привет, {0.first_name}! Я bot версии 0.5 =))".format(message.from_user),
+                         reply_markup=markup)
     else:
         if '\n' in message.text:
-            lst_vendor_code = message.text.split()
-            if all(value.isdigit() for value in lst_vendor_code):  # checking for a number
-                lst_vendor_code = list(map(int, lst_vendor_code))
-                bot.send_message(message.chat.id, 'Список загружен, для просмотра введи - "show"')
+            list_vendor_code = message.text.split()
+            if all(value.isdigit() for value in list_vendor_code):  # checking for a number
+                list_vendor_code = list(map(int, list_vendor_code))
+                bot.send_message(message.chat.id, 'Список загружен')
+            else:
+                bot.send_message(message.chat.id, 'Некорректный ввод, ')
         else:
-            bot.send_message(message.chat.id, '''Я тебя не пойму....(((
-                            Для загрузки списка артикулов набери - "list"
-                            Для старта набери -  "run"
-                            Для просмотра списка - "show"
-                            ''')
+            bot.send_message(message.chat.id, 'Я тебя не пойму....(((')
 
 
-def get_name_stock(vc):
-    global vendor_code_error
-    try:
-        time.sleep(5)
-        url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
+def get_stock_info():
+    global list_vendor_code
+    answer = dict()
 
-        with webdriver.Chrome(executable_path='/usr/local/bin/chromedriver') as browser:
-            browser.get(url=url)
-            lst_value = browser.find_element(By.CLASS_NAME, 'delivery__store')
+    key = WB_API
+    # url = f'https://suppliers-stats.wildberries.ru/api/v1/supplier/stocks'
+    url = f'https://suppliers-stats.wildberries.ru/api/v1/supplier/orders'
 
-            if not lst_value.text == 'со склада продавца':
-                return f'ВНИМАНИЕ!!! Артикул - {vc} {url} {lst_value.text} '
+    response = requests.get(url, params={'key': key, 'dateFrom': '2022-09-05'}).json()
 
-            return f'{vc}{url} OK'
-    except Exception:
-        vendor_code_error.append(vc)
-        return f'Произошла ошибка! Арктикул {vc}'
+    for i in response:
+        if i['nmId'] in list_vendor_code:
+            answer[i['nmId']] = [i['warehouseName'],
+                                 f'https://www.wildberries.ru/catalog/{i["nmId"]}/detail.aspx?targetUrl=MI']
+    return answer
 
 
-bot.infinity_polling()
+def my_func():
+    answer = get_stock_info()
+    bot.send_message(815599051, str(answer))   # ToDo получение id chat
+    print('i am working')
+
+
+def sheduler():
+    global minutes
+    schedule.every(minutes).minutes.do(my_func)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+
+Thread(target=sheduler, args=()).start()
+
+bot.polling(none_stop=True)
+
+# 58989771
+# 57824933
+# warehouseName - скалд
+# nmId - 58989771 артикул
