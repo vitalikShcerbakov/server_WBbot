@@ -4,8 +4,7 @@ import time
 import schedule
 import telebot
 from telebot import types
-from threading import Thread
-import schedule
+
 
 TOKEN = '1722383778:AAFr6EEVT9z16sIxOmRhvFDuHcX8mRXquSE'
 bot = telebot.TeleBot(TOKEN)
