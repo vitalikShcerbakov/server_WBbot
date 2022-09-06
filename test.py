@@ -108,10 +108,4 @@ def sheduler():
 
 
 Thread(target=sheduler, args=()).start()
-
 bot.polling(none_stop=True)
-
-# 58989771
-# 57824933
-# warehouseName - скалд
-# nmId - 58989771 артикул
