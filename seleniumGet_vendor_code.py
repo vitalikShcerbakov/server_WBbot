@@ -9,25 +9,29 @@ import time
 
 def get_vendor_code(list_vc):
     list_vendor_code = []
-
     options_chrome = webdriver.ChromeOptions()
     options_chrome.add_argument('--headless')
 
     with webdriver.Chrome(options=options_chrome, executable_path='/usr/local/bin/chromedriver') as browser:
         for vc in list_vc:
+            line = []
             try:
-
                 url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
                 browser.get(url=url)
                 time.sleep(3)
-                lst_value = browser.find_element(By.CLASS_NAME, 'delivery__store')
-
+                lst_value = browser.find_element(
+                    By.CLASS_NAME, 'delivery__store')
+                answer = f'{url} {lst_value.text}'
+                line.append(vc)
+                line.append(answer)
                 if not lst_value.text == 'со склада продавца':
-                    list_vendor_code.append(f'ВНИМАНИЕ!!! Артикул - {vc} {url} {lst_value.text}')
-
-                #list_vendor_code.append(f'{url} OK')  # Закоментировать строку при работе с ботом
-
+                    line.append(False)
+                else:
+                    line.append(True)
             except Exception:
-                list_vendor_code.append(f'Произошла ошибка! Артикул {vc} ---- {url}')
+                line.append(vc)
+                line.append(False)
+                line.append('Error')
 
+            list_vendor_code.append(line)
     return list_vendor_code
