@@ -11,7 +11,7 @@ bot = telebot.TeleBot(TOKEN)
 
 minutes = 10
 list_vendor_code = []
-
+flag_start = True
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -19,7 +19,8 @@ def start(message):
     btn1 = types.KeyboardButton("Просмотреть список артикулов")
     btn2 = types.KeyboardButton("Запустить проверку")
     btn3 = types.KeyboardButton("Задать интервал")
-    markup.add(btn1, btn2, btn3)
+    btn4 = types.KeyboardButton("Отооновить проверку")
+    markup.add(btn1, btn2, btn3, btn4)
     bot.send_message(message.chat.id, text="Привет, {0.first_name}! Я bot версии 0.5 =))".format(message.from_user),
                      reply_markup=markup)
 
@@ -28,16 +29,22 @@ def start(message):
 def func(message):
     global list_vendor_code
     global minutes
+    global chat_id
+    global flag_start
+    chat_id = message.chat.id
     if (message.text == "Запустить проверку"):
         if len(list_vendor_code) == 0:
             bot.send_message(message.chat.id, 'Список пуст, загрузи его')
         else:
-            answer = get_stock_info()
-            bot.send_message(message.chat.id, str(answer))
+            flag_start = False
+
 
 
     elif message.text == "Просмотреть список артикулов":
         bot.send_message(message.chat.id, str(list_vendor_code))
+
+    elif message.text == 'Отооновить проверку':
+        flag_start = False
 
     elif message.text == 'Задать интервал':
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -65,7 +72,7 @@ def func(message):
         bot.send_message(message.chat.id, text="Привет, {0.first_name}! Я bot версии 0.5 =))".format(message.from_user),
                          reply_markup=markup)
     else:
-        if '\n' in message.text:
+        if '\n' in message.text or ' ' in message.text:
             list_vendor_code = message.text.split()
             if all(value.isdigit() for value in list_vendor_code):  # checking for a number
                 list_vendor_code = list(map(int, list_vendor_code))
@@ -90,19 +97,20 @@ def get_stock_info():
         if i['nmId'] in list_vendor_code:
             answer[i['nmId']] = [i['warehouseName'],
                                  f'https://www.wildberries.ru/catalog/{i["nmId"]}/detail.aspx?targetUrl=MI']
-    return answer
+    bot.send_message(chat_id, str(answer))
+    #return answer
 
 
 def my_func():
     answer = get_stock_info()
-    bot.send_message(815599051, str(answer))   # ToDo получение id chat
+    bot.send_message(chat_id, str('i am wordking'))   # ToDo получение id chat
     print('i am working')
 
 
 def sheduler():
     global minutes
-    schedule.every(minutes).minutes.do(my_func)
-    while True:
+    schedule.every(minutes).seconds.do(my_func)
+    while flag_start:
         schedule.run_pending()
         time.sleep(1)
 
