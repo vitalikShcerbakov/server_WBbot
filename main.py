@@ -3,7 +3,9 @@ import schedule
 from datetime import datetime
 import time
 import csv
-from seleniumGet_vendor_code import get_vendor_code
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
 import telebot
 from telebot import types
 from settings import TG_TOKEN
@@ -49,6 +51,35 @@ def func(message):
             bot.send_message(message.chat.id, 'Разделитель должен быть пробел или ","')
             bot.send_message(message.chat.id, 'должы быть только цифры')
 
+def get_vendor_code(list_vc):
+    list_vendor_code = []
+    options_chrome = webdriver.ChromeOptions()
+    options_chrome.add_argument('--headless')
+
+    with webdriver.Chrome(options=options_chrome, executable_path='/usr/local/bin/chromedriver') as browser:
+        for vc in list_vc:
+            line = []
+            try:
+                url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
+                browser.get(url=url)
+                time.sleep(3)
+                lst_value = browser.find_element(
+                    By.CLASS_NAME, 'delivery__store')
+                answer = f'{url} {lst_value.text}'
+                line.append(vc)
+                line.append(answer)
+                print(lst_value.text)
+                if not lst_value.text == 'со склада продавца Коледино':
+                    line.append(False)
+                else:
+                    line.append(True)
+            except Exception:
+                line.append(vc)
+                line.append(False)
+                line.append('Error')
+
+            list_vendor_code.append(line)
+    return list_vendor_code
 
 def write_to_database(list_vc: list) -> None:
     with open('datebase.csv', 'w+') as csv_file: 
@@ -91,7 +122,6 @@ def start_check_vc():
     answer = get_vendor_code(list_vendor_code)
     write_to_database(answer)
     for line in answer:
-        print(line[2])
         if not line[2] or line[2] == 'Error':
             bot.send_message(chat_id, str(line))
             
@@ -100,7 +130,7 @@ def start_check_vc():
 
 
 def sheduler():
-    schedule.every(10).seconds.do(start_check_vc)
+    schedule.every(10).minutes.do(start_check_vc)
     while True:
         schedule.run_pending()
         time.sleep(1)
