@@ -24,7 +24,8 @@ def get_vendor_code(list_vc):
                 answer = f'{url} {lst_value.text}'
                 line.append(vc)
                 line.append(answer)
-                if not lst_value.text == 'со склада продавца':
+                print(lst_value.text)
+                if not lst_value.text == 'со склада продавца Коледино':
                     line.append(False)
                 else:
                     line.append(True)

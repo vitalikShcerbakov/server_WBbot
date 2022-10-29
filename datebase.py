@@ -25,7 +25,7 @@ def write_to_database(list_vc: list) -> None:
 
     for line in list_vc:
         print(line)
-        code, stutus, *error_type = line
+        code, stutus, error_type = line
         cur.execute(f'''
         INSERT INTO vendors_codes(codes, status, error, date)
         VALUES ({code}, {error_type}, {stutus}, '{datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")}');''')
