@@ -1,13 +1,14 @@
-from threading import Thread
-import schedule
-from datetime import datetime
-import time
 import csv
+import time
+from datetime import datetime
+from threading import Thread
+
+import telebot
+import schedule
+from telebot import types
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-import time
-import telebot
-from telebot import types
+
 from settings import TG_TOKEN
 
 bot = telebot.TeleBot(TG_TOKEN)
@@ -19,10 +20,10 @@ def start(message):
     btn1 = types.KeyboardButton("Просмотреть список артикулов")
     btn2 = types.KeyboardButton("Запустить проверку")
     btn3 = types.KeyboardButton("Просмотр последней проверки")
-    #btn4 = types.KeyboardButton("Отооновить проверку")
     markup.add(btn1, btn2, btn3)
-    bot.send_message(message.chat.id, text="Привет, {0.first_name}! Я bot версии 0.9 =))".format(message.from_user),
-                     reply_markup=markup)
+    bot.send_message(
+        message.chat.id, text="Привет, {0.first_name}! Я bot версии 0.9 =))"
+        .format(message.from_user), reply_markup=markup)
 
 
 @bot.message_handler(content_types=['text'])
@@ -36,31 +37,34 @@ def func(message):
 
     elif message.text == "Просмотреть список артикулов":
         answer = show_result_check()
-        for line in answer:       
+        for line in answer:
             bot.send_message(message.chat.id, str(line))
 
     elif message.text == 'Просмотр последней проверки':
         answer = read_from_datebase()
         for line in answer:
             bot.send_message(message.chat.id, str(line))
-        
     else:
         if download_article_list(message.text):
             bot.send_message(message.chat.id, 'Cписок загружен')
         else:
-            bot.send_message(message.chat.id, 'Разделитель должен быть пробел или ","')
+            bot.send_message(
+                message.chat.id, 'Разделитель должен быть пробел или ","')
             bot.send_message(message.chat.id, 'должы быть только цифры')
+
 
 def get_vendor_code(list_vc):
     list_vendor_code = []
     options_chrome = webdriver.ChromeOptions()
     options_chrome.add_argument('--headless')
 
-    with webdriver.Chrome(options=options_chrome, executable_path='/usr/local/bin/chromedriver') as browser:
+    with webdriver.Chrome(
+        options=options_chrome,
+         executable_path='/usr/local/bin/chromedriver') as browser:
         for vc in list_vc:
             line = []
+            url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
             try:
-                url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
                 browser.get(url=url)
                 time.sleep(3)
                 lst_value = browser.find_element(
@@ -68,21 +72,21 @@ def get_vendor_code(list_vc):
                 answer = f'{url} {lst_value.text}'
                 line.append(vc)
                 line.append(answer)
-                print(lst_value.text)
-                if not lst_value.text == 'со склада продавца Коледино':
-                    line.append(False)
-                else:
+                if lst_value.text.find('со склада продавца') != -1:
                     line.append(True)
+                else:
+                    line.append(False)
             except Exception:
                 line.append(vc)
-                line.append(False)
+                line.append(url)
                 line.append('Error')
 
             list_vendor_code.append(line)
     return list_vendor_code
 
+
 def write_to_database(list_vc: list) -> None:
-    with open('datebase.csv', 'w+') as csv_file: 
+    with open('datebase.csv', 'w+') as csv_file:
         writer = csv.writer(csv_file)
         for line in list_vc:
             date_write = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
@@ -98,20 +102,21 @@ def read_from_datebase():  # ToDo annotation
             result.append(row)
     return result
 
+
 def show_result_check():
     result = read_from_datebase()
-    list_vendor_code = [int(value[0]) for value in result if value != None]
-    return list_vendor_code
+    return [int(value[0]) for value in result if value is not None]
+
 
 def download_article_list(msg):
     if '\n' in msg or ' ' in msg:
-            list_vendor_code = msg.split()
-            if all(value.isdigit() for value in list_vendor_code):  # checking for a number
-                list_vendor_code = list(map(int, list_vendor_code))
-                list_vendor_code = [[vc, None, True]for vc in list_vendor_code]
-                write_to_database(list_vendor_code)
-                print('Список загружен')
-                return True
+        list_vendor_code = msg.split()
+        if all(value.isdigit() for value in list_vendor_code):
+            list_vendor_code = list(map(int, list_vendor_code))
+            list_vendor_code = [[vc, None, True]for vc in list_vendor_code]
+            write_to_database(list_vendor_code)
+            print('Список загружен')
+            return True
     return False
 
 
@@ -124,14 +129,14 @@ def start_check_vc():
     for line in answer:
         if not line[2] or line[2] == 'Error':
             bot.send_message(chat_id, str(line))
-            
-    bot.send_message(chat_id, 'Провека окончена, для просмотра результата ')
-
+    bot.send_message(
+        chat_id, 'Провека окончена, для просмотра результата ')
 
 
 def sheduler():
-    schedule.every(10).minutes.do(start_check_vc)
+    schedule.every(1).minutes.do(start_check_vc)
     while True:
+        print('работает после ваил')
         schedule.run_pending()
         time.sleep(1)
 
