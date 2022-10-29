@@ -136,7 +136,6 @@ def start_check_vc():
 def sheduler():
     schedule.every(1).minutes.do(start_check_vc)
     while True:
-        print('работает после ваил')
         schedule.run_pending()
         time.sleep(1)
 
