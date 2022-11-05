@@ -25,7 +25,7 @@ def get_vendor_code():
 
     with webdriver.Chrome(
         options=options_chrome,
-         executable_path='/usr/local/bin/chromedriver') as browser:
+         executable_path='/home/ubuntu/dev/chromedriver') as browser:
         for i, vc in enumerate(list_vc):
             line = []
             url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
@@ -34,7 +34,6 @@ def get_vendor_code():
                 time.sleep(3)
                 lst_value = browser.find_element(
                     By.CLASS_NAME, 'delivery__store')
-                #answer = f'{url} {lst_value.text}'
                 line.append(vc)
                 line.append(url)
                 line.append(lst_value.text)
@@ -129,7 +128,7 @@ def start(message):
         for i in data:
             id, name, flag = i.split()
             list_id.append(int(id))
-        print(list_id)    
+        print(list_id, message.from_user.first_name)
         if message.chat.id not in list_id:
             file.write(f'{message.chat.id} {message.from_user.first_name} {True} \n')
 
@@ -139,7 +138,7 @@ def start(message):
     btn3 = types.KeyboardButton("Просмотр последней проверки")
     markup.add(btn1, btn2, btn3)
     bot.send_message(
-        message.chat.id, text="Привет, {0.first_name}! Я bot версии 0.9 =))"
+        message.chat.id, text="Привет, {0.first_name}! Введите /start"
         .format(message.from_user), reply_markup=markup)
 
 
@@ -170,17 +169,14 @@ def func(message):
 
 
 def sheduler():
-    schedule.every(10).minutes.do(get_vendor_code)
-    schedule.every(15).minutes.do(send_message)
+    schedule.every(5).minutes.do(get_vendor_code)
+    schedule.every(7).minutes.do(send_message)
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 
 Thread(target=sheduler, args=()).start()
-try:
-    bot.polling(none_stop=True, timeout=5, interval=1)
-except:
-    time.sleep(5)
+bot.polling(none_stop=True, timeout=5, interval=1)
 
 #bot.infinity_polling()
