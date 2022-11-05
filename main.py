@@ -58,11 +58,17 @@ def get_vendor_code():
 
 
 def notification_on_off(chad_id, flag):
-    with open('users_datebase.csv', 'r') as csv_file:
-        file = csv.reader(csv_file, delimiter=',')
-        for f in file:
-            print(f) 
+    with open('users_datebase.txt', 'r+') as file:
+        data = file.readlines()
+        for i, line in enumerate(data):
+            id, name, _ = line.split()
+            if chad_id == int(id):
+                data[i] = f'{id} {name} {flag}'
+    with open('users_datebase.txt', 'r+') as file:
+        print(data)
+        file.writelines(data)
 
+        
 def write_to_database(list_vc: list) -> None:
     with open('datebase.csv', 'w+') as csv_file:
         writer = csv.writer(csv_file)
@@ -95,9 +101,13 @@ def download_article_list(msg):
 
 def send_message():
     '''Функция рассылки сообщений пользователям'''
-    with open('users_datebase.csv', 'r') as csv_file:
-        file = csv.reader(csv_file, delimiter=',', quotechar='|')
-        users_id = [chat_id[0] for chat_id in file if chat_id[1]]
+    users_id = []
+    with open('users_datebase.txt', 'r') as file:
+        file_read = file.readlines()
+        for line in file_read:
+            id, name, flag = line.split()
+            if flag != 'False':
+                users_id.append(id)
 
     data = read_from_datebase()
     for user in users_id:
@@ -109,14 +119,19 @@ def send_message():
         errors = sum([1 for i in data if i[2] == 'Error'])
         bot.send_message(user, f'Время последней проверки: {line_text[-1]}')
         bot.send_message(user, f'Ошибок {errors}')
-        bot.send_message(user, 'Для просмотра полной информации нажмите "Полная информация последней проверки"')
 
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    with open('users_datebase.csv', 'w') as file:
-        writer = csv.writer(file)
-        writer.writerow([message.chat.id, message.from_user.first_name, True])
+    with open('users_datebase.txt', 'r+') as file:
+        data = file.readlines()
+        list_id = []
+        for i in data:
+            id, name, flag = i.split()
+            list_id.append(int(id))
+        print(list_id)    
+        if message.chat.id not in list_id:
+            file.write(f'{message.chat.id} {message.from_user.first_name} {True} \n')
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = types.KeyboardButton("Включить уведомления")
@@ -143,7 +158,7 @@ def func(message):
     elif message.text == 'Просмотр последней проверки':
         answer = read_from_datebase()
         for line in answer:
-            bot.send_message(message.chat.id, str(line))
+            bot.send_message(message.chat.id, f'{line[0]} {line[1]} {line[2]}')
 
     else:
         if download_article_list(message.text):
@@ -155,15 +170,17 @@ def func(message):
 
 
 def sheduler():
-    #schedule.every(40).seconds.do(get_vendor_code)
-    #schedule.every(10).seconds.do(send_message)
+    schedule.every(10).minutes.do(get_vendor_code)
+    schedule.every(15).minutes.do(send_message)
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 
 Thread(target=sheduler, args=()).start()
-bot.polling(none_stop=True)
-
+try:
+    bot.polling(none_stop=True, timeout=5, interval=1)
+except:
+    time.sleep(5)
 
 #bot.infinity_polling()
