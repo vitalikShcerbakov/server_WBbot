@@ -56,18 +56,6 @@ def get_vendor_code():
     print(f'Время последнией проверки: {date_now}')
     write_to_database(list_vendor_code)
 
-
-def notification_on_off(chad_id, flag):
-    with open('users_datebase.txt', 'r+') as file:
-        data = file.readlines()
-        for i, line in enumerate(data):
-            id, name, _ = line.split()
-            if chad_id == int(id):
-                data[i] = f'{id} {name} {flag} \n'
-    with open('users_datebase.txt', 'r+') as file:
-        print(data)
-        file.writelines(data)
-
         
 def write_to_database(list_vc: list) -> None:
     with open('datebase.csv', 'w+') as csv_file:
@@ -123,6 +111,22 @@ def send_message():
         bot.send_message(user, f'Ошибок {errors}')
 
 
+def notification_on_off(chad_id, flag):
+    with open('users_datebase.txt', 'r') as file:
+        data = file.readlines()
+        new_data = []
+        try:
+            for i, line in enumerate(data):
+                id, name, _ = line.split()
+                if chad_id == int(id):
+                    new_data.append(f'{id} {name} {flag} \n')
+                else:
+                    new_data.append(line)
+        except Exception as e:
+         print(e)
+    with open('users_datebase.txt', 'w') as file:
+        file.writelines(new_data)
+
 @bot.message_handler(commands=['start'])
 def start(message):
     with open('users_datebase.txt', 'r+') as file:
@@ -132,7 +136,6 @@ def start(message):
             for i in data:
                 id, name, flag = i.split()
                 list_id.append(int(id))
-            print(list_id, message.from_user.first_name)
         except Exception as e:
             print(e)
             
@@ -178,7 +181,7 @@ def func(message):
 
 def sheduler():
     schedule.every(5).minutes.do(get_vendor_code)
-    schedule.every(10).minutes.do(send_message)
+    schedule.every(2).minutes.do(send_message)
     while True:
         schedule.run_pending()
         time.sleep(1)
