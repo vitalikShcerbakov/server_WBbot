@@ -25,8 +25,8 @@ def get_vendor_code():
 
     with webdriver.Chrome(
         options=options_chrome,
-         executable_path='/home/ubuntu/dev/chromedriver') as browser:
-         #executable_path='/usr/local/bin/chromedriver') as browser:
+         #executable_path='/home/ubuntu/dev/chromedriver') as browser:
+         executable_path='/usr/local/bin/chromedriver') as browser:
         for i, vc in enumerate(list_vc):
             line = []
             url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
@@ -105,9 +105,12 @@ def send_message():
     with open('users_datebase.txt', 'r') as file:
         file_read = file.readlines()
         for line in file_read:
-            id, name, flag = line.split()
-            if flag != 'False':
-                users_id.append(id)
+            try:
+                id, name, flag = line.split()
+                if flag != 'False':
+                    users_id.append(id)
+            except Exception as e:
+                break                
 
     data = read_from_datebase()
     for user in users_id:
@@ -125,10 +128,14 @@ def start(message):
     with open('users_datebase.txt', 'r+') as file:
         data = file.readlines()
         list_id = []
-        for i in data:
-            id, name, flag = i.split()
-            list_id.append(int(id))
-        print(list_id, message.from_user.first_name)
+        try:
+            for i in data:
+                id, name, flag = i.split()
+                list_id.append(int(id))
+            print(list_id, message.from_user.first_name)
+        except Exception as e:
+            print(e)
+            
         if message.chat.id not in list_id:
             file.write(f'{message.chat.id} {message.from_user.first_name} {True} \n')
 
