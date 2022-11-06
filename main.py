@@ -26,6 +26,7 @@ def get_vendor_code():
     with webdriver.Chrome(
         options=options_chrome,
          executable_path='/home/ubuntu/dev/chromedriver') as browser:
+         #executable_path='/usr/local/bin/chromedriver') as browser:
         for i, vc in enumerate(list_vc):
             line = []
             url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
@@ -62,7 +63,7 @@ def notification_on_off(chad_id, flag):
         for i, line in enumerate(data):
             id, name, _ = line.split()
             if chad_id == int(id):
-                data[i] = f'{id} {name} {flag}'
+                data[i] = f'{id} {name} {flag} \n'
     with open('users_datebase.txt', 'r+') as file:
         print(data)
         file.writelines(data)
@@ -114,7 +115,6 @@ def send_message():
             if line_text[3] == 'False':
                 bot.send_message(user, line_text[1])
 
-        date_now = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
         errors = sum([1 for i in data if i[2] == 'Error'])
         bot.send_message(user, f'Время последней проверки: {line_text[-1]}')
         bot.send_message(user, f'Ошибок {errors}')
@@ -158,6 +158,7 @@ def func(message):
         answer = read_from_datebase()
         for line in answer:
             bot.send_message(message.chat.id, f'{line[0]} {line[1]} {line[2]}')
+        bot.send_message(message.chat.id, f'Время последней проверки: {line[-1]}')
 
     else:
         if download_article_list(message.text):
@@ -170,7 +171,7 @@ def func(message):
 
 def sheduler():
     schedule.every(5).minutes.do(get_vendor_code)
-    schedule.every(7).minutes.do(send_message)
+    schedule.every(10).minutes.do(send_message)
     while True:
         schedule.run_pending()
         time.sleep(1)
@@ -179,4 +180,10 @@ def sheduler():
 Thread(target=sheduler, args=()).start()
 bot.polling(none_stop=True, timeout=5, interval=1)
 
-#bot.infinity_polling()
+while True:
+    try:
+        bot.polling(non_stop=True, interval=0)
+    except Exception as e:
+        print(e)
+        time.sleep(5)
+        continue
