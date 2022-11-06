@@ -8,7 +8,7 @@ import schedule
 from telebot import types
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-
+from selenium.webdriver.chrome.service import Service
 from settings import TG_TOKEN
 
 bot = telebot.TeleBot(TG_TOKEN)
@@ -22,11 +22,10 @@ def get_vendor_code():
 
     options_chrome = webdriver.ChromeOptions()
     options_chrome.add_argument('--headless')
-
+    s = Service('/usr/local/bin/chromedriver')     
     with webdriver.Chrome(
         options=options_chrome,
-         #executable_path='/home/ubuntu/dev/chromedriver') as browser:
-         executable_path='/usr/local/bin/chromedriver') as browser:
+         service=s) as browser:
         for i, vc in enumerate(list_vc):
             line = []
             url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
@@ -180,7 +179,7 @@ def func(message):
 
 
 def sheduler():
-    schedule.every(5).minutes.do(get_vendor_code)
+    schedule.every(2).minutes.do(get_vendor_code)
     schedule.every(2).minutes.do(send_message)
     while True:
         schedule.run_pending()
