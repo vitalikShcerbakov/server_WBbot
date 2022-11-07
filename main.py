@@ -22,7 +22,9 @@ def get_vendor_code():
 
     options_chrome = webdriver.ChromeOptions()
     options_chrome.add_argument('--headless')
-    s = Service('/usr/local/bin/chromedriver')     
+    options_chrome.add_argument('--no-sandbox')
+    #s = Service('/usr/local/bin/chromedriver') 
+    s = Service('/home/ubuntu/dev/WBbot/chromedriver') 
     with webdriver.Chrome(
         options=options_chrome,
          service=s) as browser:
@@ -179,8 +181,8 @@ def func(message):
 
 
 def sheduler():
-    schedule.every(2).minutes.do(get_vendor_code)
-    schedule.every(2).minutes.do(send_message)
+    schedule.every(7).minutes.do(get_vendor_code)
+    schedule.every(10).minutes.do(send_message)
     while True:
         schedule.run_pending()
         time.sleep(1)
