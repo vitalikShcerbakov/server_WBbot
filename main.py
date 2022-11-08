@@ -74,11 +74,11 @@ def get_vendor_code():
                 date_now = datetime.now()
                 line.append(f'{date_now:%Y-%m-%d %H:%M:%S}')
                 progress_bar = (i + 1) / len(list_vc) * 100
-                print(f'Progress: {round(progress_bar, 1)} % {int(progress_bar) * "#"} {i}/{len(list_vc)}')
+                print(f'Progress: {round(progress_bar, 1)} % {i}/{len(list_vc)}')
 
             list_vendor_code.append(line)
 
-    print(f'Время последнией проверки: {date_now}')
+    print(f'Время последнией проверки: {date_now:%Y-%m-%d %H:%M:%S}')
     write_to_database(list_vendor_code)
 
 
