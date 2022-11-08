@@ -13,7 +13,7 @@ from settings import TG_TOKEN
 
 bot = telebot.TeleBot(TG_TOKEN)
 TIME_SENDING_MESSAGE = 25
-TIME_CHECK_VENDOR_CODE = 2
+TIME_CHECK_VENDOR_CODE = 20
 
 def get_vendor_code():
 
