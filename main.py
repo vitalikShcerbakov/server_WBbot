@@ -194,6 +194,8 @@ def func(message):
         for line in answer:
             if line[3] == 'False' and line[2] != 'Нет в наличии':
                 bot.send_message(message.chat.id, f'{line[1]}')
+        if all(map(lambda x: False if line[3] == 'False' and line[2] != 'Нет в наличии' else True, answer)):
+            bot.send_message(message.chat.id, f'Нет товаров на выкуп 😉')
 
     elif message.text == "Просмотр товаров 'Нет в наличии'":
         answer = read_from_datebase()
