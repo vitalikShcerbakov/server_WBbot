@@ -13,7 +13,7 @@ from settings import TG_TOKEN
 
 bot = telebot.TeleBot(TG_TOKEN)
 TIME_SENDING_MESSAGE = 25
-TIME_CHECK_VENDOR_CODE = 20
+TIME_CHECK_VENDOR_CODE = 2
 
 def get_vendor_code():
 
@@ -24,8 +24,8 @@ def get_vendor_code():
     options_chrome = webdriver.ChromeOptions()
     options_chrome.add_argument('--headless')
     options_chrome.add_argument('--no-sandbox')
-    s = Service('/home/ubuntu/dev/WBbot/chromedriver')
-    #s = Service('/usr/local/bin/chromedriver')
+    #s = Service('/home/ubuntu/dev/WBbot/chromedriver')
+    s = Service('/usr/local/bin/chromedriver')
 
     with webdriver.Chrome(
         options=options_chrome,
