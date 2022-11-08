@@ -12,9 +12,14 @@ from selenium.webdriver.chrome.service import Service
 from settings import TG_TOKEN
 
 bot = telebot.TeleBot(TG_TOKEN)
+
 TIME_SENDING_MESSAGE = 25
 TIME_CHECK_VENDOR_CODE = 20
-
+ADMIN_LIST = [
+    816283898,   # Дима
+    815599051,   # Я
+    631613499,   # Наська
+    ]
 def get_vendor_code():
 
     result = read_from_datebase()
@@ -66,6 +71,9 @@ def get_vendor_code():
                     line.append('Error')
             finally:
                 date_now = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+                ''' now = dt.now()
+                    print(f"Текущее время {now:%d.%m.%Y %H:%M}")
+                    Текущее время 24.02.2017 15:51'''
                 line.append(date_now)
                 progress_bar = (i + 1) / len(list_vc) * 100
                 print(f'Progress: {round(progress_bar, 1)} % {int(progress_bar) * "#"} {i}/{len(list_vc)}')
@@ -92,17 +100,17 @@ def read_from_datebase():
     return result
 
 
-def download_article_list(msg):
-    if '\n' in msg or ' ' in msg:
-        list_vendor_code = msg.split()
-        if all(value.isdigit() for value in list_vendor_code):
-            list_vendor_code = list(map(int, list_vendor_code))
-            list_vendor_code = [[vc, None, True] for vc in list_vendor_code]
-            write_to_database(list_vendor_code)
-            print('Список загружен')
-            return True
+def download_article_list(msg, user_id):
+    if user_id in ADMIN_LIST:
+        if '\n' in msg or ' ' in msg:
+            list_vendor_code = msg.split()
+            if all(value.isdigit() for value in list_vendor_code):
+                list_vendor_code = list(map(int, list_vendor_code))
+                list_vendor_code = [[vc, None, True] for vc in list_vendor_code]
+                write_to_database(list_vendor_code)
+                print('Список загружен')
+                return True
     return False
-
 
 def send_message():
     '''Функция рассылки сообщений пользователям'''
@@ -155,8 +163,8 @@ def start(message):
         data = file.readlines()
         list_id = []
         try:
-            for i in data:
-                id, name, flag = i.split()
+            for line in data:
+                id, name, flag = line.split()
                 list_id.append(int(id))
         except Exception as e:
             print(e)
@@ -174,8 +182,18 @@ def start(message):
     bot.send_message(
         message.chat.id, text="Привет, {0.first_name}! Теперь ты подписан(а) на рассылку =)"
         .format(message.from_user), reply_markup=markup)
-    bot.send_message(message.chat.id, f'Уведомления будут приходить каждые {TIME_SENDING_MESSAGE} мин')
-
+    bot.send_message(
+        message.chat.id, f'Уведомления будут приходить каждые {TIME_SENDING_MESSAGE} мин. \n'
+                         f'eсли будут товары на выкуп. \n'
+                         f'Для загрузки нового списка артикулов \n'
+                         f'тебе нужно быть администратором. \n'
+                         f'Введи спискок через запятую  или пробел - \n'
+                         f'xxxxxxx, xxxxxxx, xxxxxx, xxxxxx \n'
+                         f'Или каждый с новой строки - \n'
+                         f'xxxxxxx \n'
+                         f'xxxxxxx \n'
+                         f'xxxxxxx \n'
+                         f'xxxxxxx \n')
 
 @bot.message_handler(content_types=['text'])
 def func(message):
@@ -211,12 +229,12 @@ def func(message):
         bot.send_message(message.chat.id, f'Время последней проверки: {line[-1]}')
 
     else:
-        if download_article_list(message.text):
+        if download_article_list(message.text, message.chat.id):
             bot.send_message(message.chat.id, 'Cписок загружен')
         else:
             bot.send_message(
-                message.chat.id, 'Разделитель должен быть пробел или ","')
-            bot.send_message(message.chat.id, 'должы быть только цифры')
+                message.chat.id, 'Некорректный ввод нажми /start')
+ 
 
 
 def sheduler():
@@ -237,4 +255,3 @@ while True:
         print(e)
         time.sleep(5)
         continue
-#test
