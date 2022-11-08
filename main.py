@@ -3,12 +3,13 @@ import time
 from datetime import datetime
 from threading import Thread
 
-import telebot
 import schedule
-from telebot import types
+import telebot
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from telebot import types
+
 from settings import TG_TOKEN
 
 bot = telebot.TeleBot(TG_TOKEN)
@@ -20,16 +21,16 @@ ADMIN_LIST = [
     815599051,   # Я
     631613499,   # Наська
     ]
-def get_vendor_code():
 
+
+def get_vendor_code():
     result = read_from_datebase()
-    list_vc:list[int] =  [int(value[0]) for value in result if value is not None]
+    list_vc: list[int] = [int(val[0]) for val in result if val is not None]
     list_vendor_code = []
 
     options_chrome = webdriver.ChromeOptions()
     options_chrome.add_argument('--headless')
     options_chrome.add_argument('--no-sandbox')
-    #s = Service('/home/ubuntu/dev/WBbot/chromedriver')
     s = Service('/usr/local/bin/chromedriver')
 
     with webdriver.Chrome(
@@ -70,20 +71,17 @@ def get_vendor_code():
                     line.append('Error')
                     line.append('Error')
             finally:
-                date_now = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
-                ''' now = dt.now()
-                    print(f"Текущее время {now:%d.%m.%Y %H:%M}")
-                    Текущее время 24.02.2017 15:51'''
-                line.append(date_now)
+                date_now = datetime.now()
+                line.append(f'{date_now:%Y-%m-%d %H:%M:%S}')
                 progress_bar = (i + 1) / len(list_vc) * 100
                 print(f'Progress: {round(progress_bar, 1)} % {int(progress_bar) * "#"} {i}/{len(list_vc)}')
 
             list_vendor_code.append(line)
-    
+
     print(f'Время последнией проверки: {date_now}')
     write_to_database(list_vendor_code)
 
-        
+
 def write_to_database(list_vc: list) -> None:
     with open('datebase.csv', 'w+') as csv_file:
         writer = csv.writer(csv_file)
@@ -91,7 +89,7 @@ def write_to_database(list_vc: list) -> None:
             writer.writerow(line)
 
 
-def read_from_datebase(): 
+def read_from_datebase():
     result = []
     with open('datebase.csv', 'r') as csv_file:
         spamreader = csv.reader(csv_file, delimiter=',', quotechar='|')
@@ -106,11 +104,12 @@ def download_article_list(msg, user_id):
             list_vendor_code = msg.split()
             if all(value.isdigit() for value in list_vendor_code):
                 list_vendor_code = list(map(int, list_vendor_code))
-                list_vendor_code = [[vc, None, True] for vc in list_vendor_code]
+                list_vendor_code = [[vc, None, True, True, None] for vc in list_vendor_code]
                 write_to_database(list_vendor_code)
                 print('Список загружен')
                 return True
     return False
+
 
 def send_message():
     '''Функция рассылки сообщений пользователям'''
@@ -124,7 +123,7 @@ def send_message():
                     users_id.append(id)
             except Exception as e:
                 print(f'Error added userd in list - send_message: {e}')
-                                
+
     bad_product_detected = False
     data = read_from_datebase()
     for user in users_id:
@@ -141,6 +140,7 @@ def send_message():
             bot.send_message(user, f'Ошибок: {errors}')
         bot.send_message(user, f'Время последней проверки: {line_text[-1]}')
 
+
 def notification_on_off(chad_id, flag):
     with open('users_datebase.txt', 'r') as file:
         data = file.readlines()
@@ -153,9 +153,10 @@ def notification_on_off(chad_id, flag):
                 else:
                     new_data.append(line)
         except Exception as e:
-         print(f'Error - notification_on_off : {e}')
+            print(f'Error - notification_on_off : {e}')
     with open('users_datebase.txt', 'w') as file:
         file.writelines(new_data)
+
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -168,7 +169,7 @@ def start(message):
                 list_id.append(int(id))
         except Exception as e:
             print(e)
-            
+
         if message.chat.id not in list_id:
             file.write(f'{message.chat.id} {message.from_user.first_name} {True} \n')
 
@@ -195,6 +196,7 @@ def start(message):
                          f'xxxxxxx \n'
                          f'xxxxxxx \n')
 
+
 @bot.message_handler(content_types=['text'])
 def func(message):
     if (message.text == "Включить уведомления"):
@@ -213,20 +215,22 @@ def func(message):
             if line[3] == 'False' and line[2] != 'Нет в наличии':
                 bot.send_message(message.chat.id, f'{line[1]}')
         if all(map(lambda x: False if line[3] == 'False' and line[2] != 'Нет в наличии' else True, answer)):
-            bot.send_message(message.chat.id, f'Нет товаров на выкуп 😉')
+            bot.send_message(message.chat.id, 'Нет товаров на выкуп 😉')
 
     elif message.text == "Просмотр товаров 'Нет в наличии'":
         answer = read_from_datebase()
         for line in answer:
             if line[2] == 'Нет в наличии':
                 bot.send_message(message.chat.id, f'{line[1]}')
-        bot.send_message(message.chat.id, f'Время последней проверки: {line[-1]}')
+        bot.send_message(
+            message.chat.id, f'Время последней проверки: {line[-1]}')
 
     elif message.text == 'Полный просмотр':
         answer = read_from_datebase()
         for line in answer:
             bot.send_message(message.chat.id, f'{line[0]} {line[1]} {line[4]}')
-        bot.send_message(message.chat.id, f'Время последней проверки: {line[-1]}')
+        bot.send_message(
+            message.chat.id, f'Время последней проверки: {line[-1]}')
 
     else:
         if download_article_list(message.text, message.chat.id):
@@ -234,7 +238,6 @@ def func(message):
         else:
             bot.send_message(
                 message.chat.id, 'Некорректный ввод нажми /start')
- 
 
 
 def sheduler():
@@ -245,13 +248,18 @@ def sheduler():
         time.sleep(1)
 
 
-Thread(target=sheduler, args=()).start()
-bot.polling(none_stop=True, timeout=5, interval=1)
+def main():
+    Thread(target=sheduler, args=()).start()
+    bot.polling(none_stop=True, timeout=5, interval=1)
 
-while True:
-    try:
-        bot.polling(non_stop=True, interval=0)
-    except Exception as e:
-        print(e)
-        time.sleep(5)
-        continue
+    while True:
+        try:
+            bot.polling(non_stop=True, interval=0)
+        except Exception as e:
+            print(e)
+            time.sleep(5)
+            continue
+
+
+if __name__ == '__main__':
+    main()
