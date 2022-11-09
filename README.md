@@ -5,7 +5,6 @@
 Этот бот служит для провеки товаров (для выкупа) по артикулу.
 
 ### Технологии
-####Unordered list (-)
 - Python 3.8.10
 - pyTelegramBotAPI==4.7.0
 - beautifulsoup4==4.11.1
