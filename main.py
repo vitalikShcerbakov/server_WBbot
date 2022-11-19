@@ -62,7 +62,7 @@ def get_vendor_code():
 
                     if lst_value.text.find('Нет в наличии') == -1:
                         line.append('Нет в наличии')
-                        line.append(False)
+                        line.append(True)
                     else:
                         line.append('Неведомая ебанаая хуйня')
 
@@ -92,8 +92,8 @@ def write_to_database(list_vc: list) -> None:
 def read_from_datebase():
     result = []
     with open('datebase.csv', 'r') as csv_file:
-        spamreader = csv.reader(csv_file, delimiter=',', quotechar='|')
-        for row in spamreader:
+        file_read = csv.reader(csv_file, delimiter=',', quotechar='|')
+        for row in file_read:
             result.append(row)
     return result
 
@@ -128,7 +128,7 @@ def send_message():
     data = read_from_datebase()
     for user in users_id:
         for line_text in data:
-            if line_text[3] == 'False' and line_text[2] != 'Нет в наличии':
+            if line_text[2] != 'Нет в наличии':
                 bot.send_message(user, line_text[1])
                 bad_product_detected = True
     if bad_product_detected:
@@ -212,16 +212,13 @@ def func(message):
     elif message.text == 'Просмотр не выкупленных товаров':
         answer = read_from_datebase()
         for line in answer:
-            if line[3] == 'False' and line[2] != 'Нет в наличии':
+            if line[2] != 'Нет в наличии':
                 bot.send_message(message.chat.id, f'{line[1]}')
-                bot.delete_message(message.chat.id,message.message_id - 1)
-                bot.delete_message(message.chat.id,message.message_id - 1)
 
-        if all(map(lambda x: False if line[3] == 'False' and line[2] != 'Нет в наличии' else True, answer)):
+        if all(list([True if val[3] == 'True' else False for val in answer])):
             bot.send_message(message.chat.id, 'Нет товаров на выкуп 😉')
-            bot.delete_message(message.chat.id,message.message_id - 1)
-            bot.delete_message(message.chat.id,message.message_id - 1)
-
+        else:
+            bot.send_message(message.chat.id, 'Срочно выкупать! 😕')
 
     elif message.text == "Просмотр товаров 'Нет в наличии'":
         answer = read_from_datebase()
@@ -230,8 +227,6 @@ def func(message):
                 bot.send_message(message.chat.id, f'{line[1]}')
         bot.send_message(
             message.chat.id, f'Время последней проверки: {line[-1]}')
-        bot.delete_message(message.chat.id,message.message_id - 1)
-        bot.delete_message(message.chat.id,message.message_id - 1)
 
     elif message.text == 'Полный просмотр':
         answer = read_from_datebase()
