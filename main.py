@@ -128,7 +128,7 @@ def send_message():
     data = read_from_datebase()
     for user in users_id:
         for line_text in data:
-            if line_text[2] != 'Нет в наличии':
+            if line_text[2] != 'Нет в наличии' and line_text[3] == 'False':
                 bot.send_message(user, line_text[1])
                 bad_product_detected = True
     if bad_product_detected:
