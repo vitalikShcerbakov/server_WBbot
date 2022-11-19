@@ -135,7 +135,7 @@ def send_message():
         bad_product = sum([1 for i in data if i[2] == 'Нет в наличии'])
         errors = sum([1 for i in data if i[3] == 'Error'])
         if bad_product:
-            bot.send_message(user, f'Товар закончился: {bad_product}')
+            bot.send_message(user, f'Нет в наличии: {bad_product}')
         if errors:
             bot.send_message(user, f'Ошибок: {errors}')
         bot.send_message(user, f'Время последней проверки: {line_text[-1]}')
@@ -212,13 +212,16 @@ def func(message):
     elif message.text == 'Просмотр не выкупленных товаров':
         answer = read_from_datebase()
         for line in answer:
-            if line[2] != 'Нет в наличии':
+            if line[3] == 'False' and line[2] != 'Нет в наличии':
                 bot.send_message(message.chat.id, f'{line[1]}')
 
         if all(list([True if val[3] == 'True' else False for val in answer])):
             bot.send_message(message.chat.id, 'Нет товаров на выкуп 😉')
         else:
             bot.send_message(message.chat.id, 'Срочно выкупать! 😕')
+        bot.send_message(
+            message.chat.id, f'Время последней проверки: {line[-1]}')
+
 
     elif message.text == "Просмотр товаров 'Нет в наличии'":
         answer = read_from_datebase()
