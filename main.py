@@ -179,7 +179,8 @@ def start(message):
     btn3 = types.KeyboardButton("Просмотр не выкупленных товаров")
     btn4 = types.KeyboardButton("Просмотр товаров 'Нет в наличии'")
     btn5 = types.KeyboardButton("Полный просмотр")
-    markup.add(btn1, btn2, btn3, btn4, btn5)
+    btn6 = types.KeyboardButton("Удалить сообщения")
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
     bot.send_message(
         message.chat.id, text="Привет, {0.first_name}! Теперь ты подписан(а) на рассылку =)"
         .format(message.from_user), reply_markup=markup)
@@ -195,6 +196,23 @@ def start(message):
                          f'xxxxxxx \n'
                          f'xxxxxxx \n'
                          f'xxxxxxx \n')
+        
+
+@bot.message_handler(regexp="test")
+def handle_message(message):
+    users_id = []
+    with open('users_datebase.txt', 'r') as file:
+        file_read = file.readlines()
+        for line in file_read:
+            try:
+                id, name, flag = line.split()
+                if flag != 'False':
+                    users_id.append(id)
+            except Exception as e:
+                print(f'Error added userd in list - send_message: {e}')
+    for user in users_id:
+        bot.send_message(user, f'Что нового:\n'
+                'Добавлена кнопка очистки чата, для ее активации введите /start но перед этим рекомендуется очистить полностью чат')
 
 
 @bot.message_handler(content_types=['text'])
@@ -237,6 +255,16 @@ def func(message):
             bot.send_message(message.chat.id, f'{line[0]} {line[1]} {line[4]}')
         bot.send_message(
             message.chat.id, f'Время последней проверки: {line[-1]}')
+            
+    
+    elif message.text == 'Удалить сообщения':
+        for i in range(int(message.message_id), 1, -1):
+            try:             
+                message.message_id = i
+                bot.delete_message(message.chat.id, message.message_id)
+            except Exception:
+                break
+
 
     else:
         if download_article_list(message.text, message.chat.id):
