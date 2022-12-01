@@ -2,12 +2,10 @@ import csv
 import time
 from datetime import datetime
 from threading import Thread
-
+import read_write_to_users_database as rw_db
+import selen_web_driver as selen
 import schedule
 import telebot
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
 from telebot import types
 
 from settings import TG_TOKEN
@@ -15,72 +13,17 @@ from settings import TG_TOKEN
 bot = telebot.TeleBot(TG_TOKEN)
 
 TIME_SENDING_MESSAGE = 25
-TIME_CHECK_VENDOR_CODE = 20
+TIME_CHECK_VENDOR_CODE = 1
 ADMIN_LIST = [
     816283898,   # Дима
     815599051,   # Я
     631613499,   # Наська
     ]
 
-
 def get_vendor_code():
-    result = read_from_datebase()
-    list_vc: list[int] = [int(val[0]) for val in result if val is not None]
-    list_vendor_code = []
-
-    options_chrome = webdriver.ChromeOptions()
-    options_chrome.add_argument('--headless')
-    options_chrome.add_argument('--no-sandbox')
-    s = Service('/usr/local/bin/chromedriver')
-
-    with webdriver.Chrome(
-        options=options_chrome,
-         service=s) as browser:
-        for i, vc in enumerate(list_vc):
-            line = []
-            url = f'https://www.wildberries.ru/catalog/{vc}/detail.aspx?targetUrl=BP'
-            line.append(vc)
-            line.append(url)
-            browser.get(url=url)
-            time.sleep(3)
-            try:
-                lst_value = browser.find_element(
-                    By.CLASS_NAME, 'delivery__store')
-                line.append(lst_value.text)
-
-                if lst_value.text.find('со склада продавца') != -1:
-                    line.append(True)
-                else:
-                    line.append(False)
-
-            except Exception as e:
-                print(f'Not found class "delivery__store": {e}')
-                try:
-                    time.sleep(3)
-                    lst_value = browser.find_element(
-                        By.CLASS_NAME, 'product-line__price-now')
-
-                    if lst_value.text.find('Нет в наличии') == -1:
-                        line.append('Нет в наличии')
-                        line.append(True)
-                    else:
-                        line.append('Неведомая ебанаая хуйня')
-
-                except Exception as e:
-                    print(f'Not found class "product-line__price-now": {e}')
-                    line.append('Error')
-                    line.append('Error')
-            finally:
-                date_now = datetime.now()
-                line.append(f'{date_now:%Y-%m-%d %H:%M:%S}')
-                progress_bar = (i + 1) / len(list_vc) * 100
-                print(f'Progress: {round(progress_bar, 1)} % {i}/{len(list_vc)}')
-
-            list_vendor_code.append(line)
-
-    print(f'Время последнией проверки: {date_now:%Y-%m-%d %H:%M:%S}')
-    write_to_database(list_vendor_code)
-
+    data = rw_db.execute_read_query('vendor_code_db')
+    answer = selen.get_data_from_website(data)
+    rw_db.added_to_database(answer)
 
 def write_to_database(list_vc: list) -> None:
     with open('datebase.csv', 'w+') as csv_file:
