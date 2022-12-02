@@ -47,8 +47,8 @@ def download_article_list(msg, user_id):
             list_vendor_code = msg.split()
             if all(value.isdigit() for value in list_vendor_code):
                 list_vendor_code = list(map(int, list_vendor_code))
-                list_vendor_code = [[vc, None, True, True, None] for vc in list_vendor_code]
-                write_to_database(list_vendor_code)
+                list_vendor_code = [(vc, None, None, None, None) for vc in list_vendor_code]
+                rw_db.added_to_database(list_vendor_code)
                 print('Список загружен')
                 return True
     return False
@@ -187,28 +187,18 @@ def func(message):
     elif message.text == "Просмотр товаров 'Нет в наличии'":
         answer = read_from_datebase()
         for line in answer:
-            if line[2] == 'Нет в наличии':
-                bot.send_message(message.chat.id, f'{line[1]}')
+            if line[3] == 'Нет в наличии':
+                bot.send_message(message.chat.id, f'{line[2]}')
         bot.send_message(
             message.chat.id, f'Время последней проверки: {line[-1]}')
 
     elif message.text == 'Полный просмотр':
         answer = read_from_datebase()
         for line in answer:
-            bot.send_message(message.chat.id, f'{line[0]} {line[1]} {line[4]}')
+            bot.send_message(message.chat.id, f'{line[1]} {line[2]} {line[5]}')
         bot.send_message(
             message.chat.id, f'Время последней проверки: {line[-1]}')
             
-    
-    elif message.text == 'Удалить сообщения':
-        for i in range(int(message.message_id), 1, -1):
-            try:             
-                message.message_id = i
-                bot.delete_message(message.chat.id, message.message_id)
-            except Exception:
-                break
-
-
     else:
         if download_article_list(message.text, message.chat.id):
             bot.send_message(message.chat.id, 'Cписок загружен')

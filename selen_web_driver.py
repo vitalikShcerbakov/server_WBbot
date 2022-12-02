@@ -1,28 +1,25 @@
 
-import csv
 import time
 from datetime import datetime
-from threading import Thread
 
-import schedule
-import telebot
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from telebot import types
+
 
 
 
 
 def get_data_from_website(vc_list):
-    
-    list_vc: list[int] = [int(val[0]) for val in vc_list if val is not None]
+    for line in vc_list:
+        print(line)
+    list_vc: list[int] = [val[1] for val in vc_list]
     list_vendor_code = []
 
     options_chrome = webdriver.ChromeOptions()
     options_chrome.add_argument('--headless')
     options_chrome.add_argument('--no-sandbox')
-    s = Service('/usr/local/bin/chromedriver')
+    s = Service('/usr/local/bin/chromedriver_ver_108')
 
     with webdriver.Chrome(
         options=options_chrome,
@@ -68,6 +65,18 @@ def get_data_from_website(vc_list):
                 print(f'Progress: {round(progress_bar, 1)} % {i}/{len(list_vc)}')
 
             list_vendor_code.append(list_value)
-
-    print(f'Время последнией проверки: {date_now:%Y-%m-%d %H:%M:%S}')
     return list_vendor_code
+
+
+# 38272884       
+# 38272572       
+# 38272793       
+# 38272922       
+# 34964682       
+# 31066345
+# 33147977  
+# 33144939
+# 88107650        
+# 88108208       
+# 113068831    
+# 113068944       

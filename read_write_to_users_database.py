@@ -38,6 +38,7 @@ def added_to_database_users(connection, id_user, name, is_send_out=True, is_admi
     print(f'[INFO] Write to database successful')
 
 def execute_read_query(table_name, connection=connection,):
+    result = None
     select_querty = (
         f'SELECT * from {table_name}'
     )
@@ -50,10 +51,10 @@ def execute_read_query(table_name, connection=connection,):
 
     finally:
         return result
-#def reading_from_database():
-answer = execute_read_query(connection, 'vendor_code_db')
-for line in answer:
-    print(line)
+def reading_from_database():
+    answer = execute_read_query(connection, 'vendor_code_db')
+    for line in answer:
+        print(line)
 
 
 def added_to_database(vc_list, connection=connection):
@@ -73,45 +74,56 @@ def added_to_database(vc_list, connection=connection):
     except Exception as e:
         print(f'[INFO] error writing to database: {e}' )
 
-    
-
-def execute_read_query(connection):
-
-    select_querty = (
-        'SELECT * from users_redeem'
-    )
+def update_to_database(vc_list, connection=connection):
+    data = []
+    for value in vc_list:
+        data.append((value))
+    print(vc_list)
+    user_records = ", ".join(["%s"] * len(data))
+    insert_query = (
+         f"UPDATE  vendor_code_db (vc, url, description, status, date) VALUES {user_records}"
+     )       
+    connection.autocommit = True
     try:
-        cursor = connection.cursor()
-        cursor.execute(select_querty)
-        result = cursor.fetchall()
+         cursor = connection.cursor()
+         cursor.execute(insert_query, data)
+         print(f'[INFO] Write to database successful')
     except Exception as e:
-        print(f'[INFO] error while reading from database: {e}' )
-
-    finally:
-        return result
+        print(f'[INFO] error writing to database: {e}' )
 
 
 
 
+# def execute_read_query_user(connection):
+#     result = None
+#     select_querty = (
+#         'SELECT * from users_redeem'
+#     )
+#     try:
+#         cursor = connection.cursor()
+#         cursor.execute(select_querty)
+#         result = cursor.fetchall()
+#     except Exception as e:
+#         print(f'[INFO] error while reading from database: {e}' )
 
-data = [
-    ( 554545, 'http://google.com', 'это просто тест', True, now),
-    ( 000000, 'http://google.com', 'это просто тест', True, now),
-    ( 999999, 'http://google.com', 'это просто тест', True, now),
-    ( 333333, 'http://google.com', 'это просто тест', True, now),
-    ( 777777, 'http://google.com', 'это просто тест', True, now),
-    ( 777777, None, None, None, None),
-]
+#     finally:
+#         return result
+
+
+
+
+
+
 # added_to_database(connection, data)
 
 
 
-# print(execute_read_query(connection))
+#print(execute_read_query('vendor_code_db'))
 
 
 
 
-# def execute_query(connection, query):
+# def execute_query(query, connection=connection):
 #     connection.autocommit = True
 #     cursor = connection.cursor()
 #     try:
@@ -130,4 +142,4 @@ data = [
 #     );
 #     """
 
-# execute_query(connection, create_users_table)
+# execute_query(create_users_table)
